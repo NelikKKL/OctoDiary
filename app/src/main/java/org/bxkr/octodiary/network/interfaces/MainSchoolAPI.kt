@@ -1,0 +1,320 @@
+package org.bxkr.octodiary.network.interfaces
+
+import com.google.gson.JsonObject
+import org.bxkr.octodiary.Diary
+import org.bxkr.octodiary.models.daysbalanceinfo.DaysBalanceInfo
+import org.bxkr.octodiary.models.homeworks.HomeworksResponse
+import org.bxkr.octodiary.models.lesson2.LessonResponse
+import org.bxkr.octodiary.models.lessonschedule.LessonSchedule
+import org.bxkr.octodiary.models.mark.MarkInfo
+import org.bxkr.octodiary.models.marklistdate.MarkListDate
+import org.bxkr.octodiary.models.marklistsubjectshort.MarkListSubjectItem
+import org.bxkr.octodiary.models.mealbalance.MealBalance
+import org.bxkr.octodiary.models.mealsmenucomplexes.MealsMenuComplexes
+import org.bxkr.octodiary.models.profile.ProfileResponse
+import org.bxkr.octodiary.models.schoolinfo.SchoolInfo
+import org.bxkr.octodiary.models.visits.VisitsResponse
+import org.bxkr.octodiary.network.MESOnly
+import org.bxkr.octodiary.network.NetworkService.BaseUrl
+import org.bxkr.octodiary.network.NetworkService.MESAPIConfig
+import retrofit2.Call
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
+import retrofit2.http.Query
+
+/**
+ * Main MES API.
+ *
+ * baseUrl - [BaseUrl.MOS_SCHOOL_API] or [BaseUrl.MOSREG_SCHOOL_API]
+ */
+interface MainSchoolAPI {
+    companion object : BaseUrls() {
+        override fun getBaseUrl(diary: Diary): String {
+            return when (diary) {
+                Diary.MES -> BaseUrl.MOS_SCHOOL_API
+                Diary.MySchool -> BaseUrl.MOSREG_SCHOOL_API
+            }
+        }
+    }
+
+    /**
+     * Gets info about mark.
+     *
+     * @param accessToken Access token.
+     * @param markId Mark ID.
+     * @param studentId Student ID.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @return [MarkInfo]
+     */
+    @GET("family/mobile/v1/marks/{mark_id}")
+    fun markInfo(
+        @Header("auth-token") accessToken: String,
+        @Path("mark_id") markId: Long,
+        @Query("student_id") studentId: Long,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP
+    ): Call<MarkInfo>
+
+    /**
+     * Gets user's profile details.
+     *
+     * @param accessToken Access token.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @return [ProfileResponse]
+     */
+    @GET("family/mobile/v1/profile")
+    fun profile(
+        @Header("auth-token") accessToken: String,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP
+    ): Call<ProfileResponse>
+
+    /**
+     * Gets info about visits.
+     *
+     * @param accessToken Access token.
+     * @param contractId Contract ID.
+     * @param fromDate Start date to get visits.
+     * @param toDate End date to get visits.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @return [VisitsResponse]
+     */
+    @MESOnly
+    @GET("family/mobile/v1/visits")
+    fun visits(
+        @Header("auth-token") accessToken: String,
+        @Query("contract_id") contractId: Long,
+        @Query("from") fromDate: String,
+        @Query("to") toDate: String,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP
+    ): Call<VisitsResponse>
+
+    /**
+     * Gets marks for date range.
+     *
+     * @param accessToken Access token.
+     * @param studentId Student ID.
+     * @param fromDate Start of mark list in yyyy-MM-dd format.
+     * @param toDate End of mark list in yyyy-MM-dd format.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @return [MarkListDate]
+     */
+    @GET("family/mobile/v1/marks")
+    fun markList(
+        @Header("auth-token") accessToken: String,
+        @Query("student_id") studentId: Long,
+        @Query("from") fromDate: String,
+        @Query("to") toDate: String,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP
+    ): Call<MarkListDate>
+
+    /**
+     * Gets homeworks for date range.
+     *
+     * @param accessToken Access token.
+     * @param studentId Student ID.
+     * @param fromDate Start of homework list in yyyy-MM-dd format.
+     * @param toDate End of homework list in yyyy-MM-dd format.
+     * @param sortField Field by which sorting is performed (["date"][MESAPIConfig.DATE_FIELD] by default).
+     * @param sortDirection Sorting direction (["asc"][MESAPIConfig.ASCENDING] by default).
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @return [HomeworksResponse]
+     */
+    @GET("family/mobile/v1/homeworks")
+    fun homeworks(
+        @Header("auth-token") accessToken: String,
+        @Query("student_id") studentId: Long,
+        @Query("from") fromDate: String,
+        @Query("to") toDate: String,
+        @Query("sort_column") sortField: String = MESAPIConfig.DATE_FIELD,
+        @Query("sort_direction") sortDirection: String = MESAPIConfig.ASCENDING,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP
+    ): Call<org.bxkr.octodiary.models.homeworks2.HomeworksResponse>
+
+    /**
+     * Gets school info.
+     *
+     * @param accessToken Access token.
+     * @param schoolId School ID.
+     * @param classUnitId Class unit ID.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @return [SchoolInfo]
+     */
+    @GET("family/mobile/v1/school_info")
+    fun schoolInfo(
+        @Header("auth-token") accessToken: String,
+        @Query("school_id") schoolId: Long,
+        @Query("class_unit_id") classUnitId: Long,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP
+    ): Call<SchoolInfo>
+
+    /**
+     * Gets marks by subject.
+     *
+     * @param accessToken Access token.
+     * @param studentId Student ID.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @return List of [MarkListSubjectItem]s.
+     */
+    @GET("family/mobile/v1/subject_marks")
+    fun subjectMarks(
+        @Header("auth-token") accessToken: String,
+        @Query("student_id") studentId: Long,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP,
+    ): Call<org.bxkr.octodiary.models.marklistsubject.MarkListSubject>
+
+    /**
+     * Gets marks by subject in short form only for current period.
+     *
+     * @param accessToken Access token.
+     * @param studentId Student ID.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @return List of [MarkListSubjectItem]s.
+     */
+    @GET("family/mobile/v1/subject_marks/short")
+    fun subjectMarksShort(
+        @Header("auth-token") accessToken: String,
+        @Query("student_id") studentId: Long,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP,
+    ): Call<org.bxkr.octodiary.models.marklistsubjectshort.MarkListSubject>
+
+    /**
+     * Sets homework as done.
+     *
+     * @param accessToken Access token.
+     * @param homeworkId Homework ID.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @return Nothing.
+     */
+    @POST("family/mobile/v1/homeworks/{homework_id}/done")
+    fun doHomework(
+        @Header("auth-token") accessToken: String,
+        @Path("homework_id") homeworkId: Long,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP
+    ): Call<Unit>
+
+    /**
+     * Sets homework as undone.
+     *
+     * @param accessToken Access token.
+     * @param homeworkId Homework ID.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @return Nothing.
+     */
+    @DELETE("family/mobile/v1/homeworks/{homework_id}/done")
+    fun undoHomework(
+        @Header("auth-token") accessToken: String,
+        @Path("homework_id") homeworkId: Long,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP
+    ): Call<Unit>
+
+    /**
+     * Gets lesson description and homework.
+     *
+     * @param accessToken Access token.
+     * @param lessonId Lesson ID.
+     * @param studentId Student ID.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @return [LessonSchedule]
+     */
+    @GET("family/mobile/v1/lesson_schedule_items/{lesson_id}")
+    fun lessonSchedule(
+        @Header("auth-token") accessToken: String,
+        @Path("lesson_id") lessonId: Long,
+        @Query("student_id") studentId: Long,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP
+    ): Call<LessonResponse>
+
+    // bullshit
+//    @GET("usersettings/v1")
+//    fun <Model> pullUserSettings(
+//        @Header("auth-token") accessToken: String,
+//        @Query("name") path: String,
+//        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP,
+//        @Query("subsystem_id") subsystemId: Int = 1,
+//    ): Call<Model>
+
+    @GET("usersettings/v1")
+    fun pullUserSettingsRaw(
+        @Header("auth-token") accessToken: String,
+        @Query("name") path: String,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP,
+        @Query("subsystem_id") subsystemId: Int = 1,
+    ): Call<String>
+
+    @PUT("usersettings/v1")
+    fun pushUserSettings(
+        @Header("auth-token") accessToken: String,
+        @Query("name") path: String,
+        @Body body: JsonObject,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP,
+        @Query("subsystem_id") subsystemId: Int = 1,
+    ): Call<Unit>
+
+
+    /**
+     * Gets user's days balance info.
+     *
+     * @param accessToken Access token.
+     * @param authHeader Authorization header.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @param clientType Client type. (["diary_mobile"][MESAPIConfig.DIARY_MOBILE] by default.)
+     * @param personId Person ID.
+     * @param limit Limit. ([Int.MAX_VALUE] by default.)
+     * @param from Start date.
+     * @return [DaysBalanceInfo]
+     */
+    @GET("family/mobile/v1/day-balance-info/v2")
+    fun daysBalanceInfo(
+        @Header("auth-token") accessToken: String,
+        @Header("Authorization") authHeader: String = "Bearer $accessToken",
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP,
+        @Header("client-type") clientType: String = MESAPIConfig.DIARY_MOBILE,
+        @Query("person_id") personId: String,
+        @Query("limit") limit: Int = 40,
+        @Query("from") from: String,
+        @Query("with_payments") withPayments: Boolean = true,
+    ): Call<DaysBalanceInfo>
+
+    /**
+     * Get meals menu complexes.
+     *
+     * @param accessToken Access token.
+     * @param authHeader Authorization header.
+     * @param mesSubsystem MES subsystem (["familymp"][MESAPIConfig.FAMILYMP] by default).
+     * @param clientType Client type. (["diary_mobile"][MESAPIConfig.DIARY_MOBILE] by default.)
+     * @param personId Person ID.
+     * @param onDate Date.
+     * @return [MealsMenuComplexes]
+     */
+    @GET("meals/v2/menu/complexes")
+    fun mealsMenuComplexes(
+        @Header("auth-token") accessToken: String,
+        @Header("Authorization") authHeader: String = "Bearer $accessToken",
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP,
+        @Header("client-type") clientType: String = MESAPIConfig.DIARY_MOBILE,
+        @Query("personId") personId: String,
+        @Query("onDate") onDate: String
+    ): Call<MealsMenuComplexes>
+
+    @GET("ej/partners/v1/homeworks/launch")
+    fun launchMaterial(
+        @Header("auth-token") accessToken: String,
+        @Query("homework_entry_id") homeworkEntryId: Long,
+        @Query("material_id") materialId: String,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP
+    ): Call<String>
+
+
+    @MESOnly
+    @GET("meals/v2/clients")
+    fun mealBalance(
+        @Header("authorization") authorization: String,
+        @Header("auth-token") accessToken: String,
+        @Query("personId") personId: String,
+        @Header("X-Mes-Subsystem") mesSubsystem: String = MESAPIConfig.FAMILYMP
+    ): Call<MealBalance>
+}
