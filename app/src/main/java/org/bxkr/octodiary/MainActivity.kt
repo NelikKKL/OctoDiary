@@ -253,9 +253,16 @@ class MainActivity : FragmentActivity() {
         val bottomSheetContent by modalBottomSheetContentLive.observeAsState()
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         val snackbarHostState = snackbarHostStateLive.value!!
-        if (navControllerLive.value == null) {
-            navControllerLive.value = rememberNavController()
-        }
+        // Always (re)create the NavHostController scoped to *this* composition.
+        // navControllerLive is a process-wide singleton that survives Activity
+        // recreation (e.g. on rotation), but rememberNavController() is tied to
+        // the composition it was created in. Reusing a stale value here (the old
+        // "if value == null" check) kept a NavController wired to the destroyed
+        // Activity's ViewModelStore/SavedStateRegistry after rotation, crashing
+        // NavHost in NavScreen.kt. rememberNavController() is itself remember-ed,
+        // so this line is a no-op on ordinary recomposition and only produces a
+        // new controller when the composition (and thus the old one) is gone.
+        navControllerLive.value = rememberNavController()
         val navController = navControllerLive.observeAsState()
         val surfaceColor = MaterialTheme.colorScheme.surface
         val elevatedColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
