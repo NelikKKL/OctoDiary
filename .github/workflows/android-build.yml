@@ -39,13 +39,17 @@ jobs:
           path: app/build/outputs/apk/**/debug/*.apk
           if-no-files-found: error
 
-      # Release build is unsigned unless signing secrets are configured below.
+      # Release build is signed with the debug keystore by default (see
+      # app/build.gradle.kts) so the APK is directly installable. To sign with a
+      # real release key instead, add RELEASE_STORE_FILE / RELEASE_STORE_PASSWORD /
+      # RELEASE_KEY_ALIAS / RELEASE_KEY_PASSWORD as repo secrets and export them
+      # as env vars in this step.
       - name: Build release APK
         run: ./gradlew assembleRelease --stacktrace
 
       - name: Upload release APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-unsigned
+          name: app-release
           path: app/build/outputs/apk/**/release/*.apk
           if-no-files-found: error
