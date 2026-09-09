@@ -33,9 +33,42 @@ android {
         }
     }
 
+    signingConfigs {
+        // Signs release builds so the resulting APK is actually installable
+        // (unsigned release APKs fail with INSTALL_PARSE_FAILED_NO_CERTIFICATES).
+        // Uses a dedicated, committed self-signed keystore (keystore/release-debug.keystore)
+        // by default, so every CI build is signed with the *same* key and installs
+        // cleanly as an update over the previous build. This is NOT a secret/production
+        // key - it exists purely so personal/CI builds are installable and updatable.
+        //
+        // IMPORTANT: this deliberately does NOT reuse signingConfigs.getByName("debug"),
+        // because AGP assigns that config's default storeFile during DSL finalization,
+        // which happens *after* this block runs - reading it here returns null and
+        // silently produces an unsigned APK again.
+        //
+        // If RELEASE_STORE_FILE / RELEASE_STORE_PASSWORD / RELEASE_KEY_ALIAS /
+        // RELEASE_KEY_PASSWORD env vars are set (e.g. real release-signing secrets
+        // in CI), those take priority over the committed keystore.
+        create("release") {
+            val storeFilePath = System.getenv("RELEASE_STORE_FILE")
+            if (storeFilePath != null) {
+                storeFile = file(storeFilePath)
+                storePassword = System.getenv("RELEASE_STORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            } else {
+                storeFile = rootProject.file("keystore/release-debug.keystore")
+                storePassword = "octodiary-debug"
+                keyAlias = "octodiary-debug"
+                keyPassword = "octodiary-debug"
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
